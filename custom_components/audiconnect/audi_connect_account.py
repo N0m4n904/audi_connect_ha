@@ -606,34 +606,35 @@ class AudiConnectVehicle:
                 raise
 
     async def update(self):
-        info = ""
+        self._no_error = True
+        updates = [
+            ("statusreport", self.update_vehicle_statusreport),
+            ("shortterm", self.update_vehicle_shortterm),
+            ("longterm", self.update_vehicle_longterm),
+            ("position", self.update_vehicle_position),
+            ("climater", self.update_vehicle_climater),
+            # ("charger", self.update_vehicle_charger),
+            ("preheater", self.update_vehicle_preheater),
+        ]
+        for info, update_func in updates:
+            try:
+                await self.call_update(update_func, 3)
+            except Exception as exception:
+                self._no_error = False
+                log_exception(
+                    exception,
+                    "Unable to update vehicle data {} of {}".format(
+                        info, self._vehicle.vin
+                    ),
+                )
+
+        # Always try to fetch capabilities regardless of update failures
         try:
-            self._no_error = True
-            info = "statusreport"
-            await self.call_update(self.update_vehicle_statusreport, 3)
-            info = "shortterm"
-            await self.call_update(self.update_vehicle_shortterm, 3)
-            info = "longterm"
-            await self.call_update(self.update_vehicle_longterm, 3)
-            info = "position"
-            await self.call_update(self.update_vehicle_position, 3)
-            info = "climater"
-            await self.call_update(self.update_vehicle_climater, 3)
-            # info = "charger"
-            # await self.call_update(self.update_vehicle_charger, 3)
-            info = "preheater"
-            await self.call_update(self.update_vehicle_preheater, 3)
-            # Fetch capabilities after initial data load
             await self.fetch_capabilities()
-            # Return True on success, False on error
-            return self._no_error
-        except Exception as exception:
-            log_exception(
-                exception,
-                "Unable to update vehicle data {} of {}".format(
-                    info, self._vehicle.vin
-                ),
-            )
+        except Exception:
+            pass
+
+        return self._no_error
 
     def log_exception_once(self, exception, message):
         self._no_error = False

@@ -924,6 +924,7 @@ class AudiService:
         """
         data = json.dumps({"mode": mode})
 
+        # Try the Cariad BFF API first (newer vehicles)
         headers = {
             "Accept": "application/json",
             "Accept-charset": "utf-8",
@@ -932,31 +933,52 @@ class AudiService:
             "Content-Type": "application/json; charset=utf-8",
             "Accept-encoding": "gzip",
         }
-        # The endpoint uses the mode as a sub-path, similar to auxiliaryheating/start
-        url = self.__get_cariad_url_for_vin(
-            vin, "honkandflash/{mode}", mode=mode
-        )
+        url = self.__get_cariad_url_for_vin(vin, "honkandflash")
         _LOGGER.debug(
-            "HONKANDFLASH: Sending request to %s with payload=%s", url, data
+            "HONKANDFLASH: Trying Cariad BFF endpoint %s", url
         )
-        res = await self._api.request(
-            "POST",
-            url,
-            headers=headers,
-            data=data,
-        )
-        _LOGGER.debug("HONKANDFLASH: Response: %s", res)
-
-        request_id = None
         try:
-            request_id = res["data"]["requestID"]
-        except (KeyError, TypeError):
+            res = await self._api.request(
+                "POST",
+                url,
+                headers=headers,
+                data=data,
+            )
+            _LOGGER.debug("HONKANDFLASH: Cariad response: %s", res)
+            request_id = None
+            try:
+                request_id = res["data"]["requestID"]
+            except (KeyError, TypeError):
+                pass
+            if request_id:
+                await self.check_bff_request_succeeded(vin, request_id)
+            return
+        except Exception as e:
             _LOGGER.debug(
-                "HONKANDFLASH: No requestID in response; skipping completion check."
+                "HONKANDFLASH: Cariad BFF failed (%s), trying old API...", e
             )
 
-        if request_id:
-            await self.check_bff_request_succeeded(vin, request_id)
+        # Fallback to the old API (homeRegionSetter) similar to set_vehicle_lock
+        url_old = "{homeRegionSetter}/api/bs/honkandflash/v1/vehicles/{vin}/{mode}".format(
+            homeRegionSetter=await self._get_home_region_setter(vin.upper()),
+            vin=vin.upper(),
+            mode=mode,
+        )
+        headers_old = {
+            "Accept": "application/json",
+            "Accept-charset": "utf-8",
+            "Authorization": "Bearer " + self.vwToken.get("access_token"),
+            "User-Agent": AudiAPI.HDR_USER_AGENT,
+            "Content-Type": "application/json; charset=utf-8",
+        }
+        _LOGGER.debug("HONKANDFLASH: Trying old API endpoint %s", url_old)
+        res_old = await self._api.request(
+            "POST",
+            url_old,
+            headers=headers_old,
+            data=data,
+        )
+        _LOGGER.debug("HONKANDFLASH: Old API response: %s", res_old)
 
     async def check_bff_request_succeeded(self, vin: str, request_id: str):
         headers = {
