@@ -509,7 +509,23 @@ class AudiConnectAccount:
                 ),
             )
 
-            await self._audi_service.set_honk_and_flash(vin, mode)
+            # Try to use the vehicle's last known position for the API call
+            lat = None
+            lon = None
+            for vehicle in self._vehicles:
+                if vehicle.vin == vin.lower():
+                    position = vehicle.state.get("position")
+                    if position:
+                        lat = position.get("latitude")
+                        lon = position.get("longitude")
+                        _LOGGER.debug(
+                            "Using vehicle position for honk and flash: lat=%s, lon=%s",
+                            lat,
+                            lon,
+                        )
+                    break
+
+            await self._audi_service.set_honk_and_flash(vin, mode, lat, lon)
 
             _LOGGER.debug(
                 "Successfully triggered honk and flash ({mode}) on vehicle {vin}".format(

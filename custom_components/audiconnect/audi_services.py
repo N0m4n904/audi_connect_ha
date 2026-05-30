@@ -917,25 +917,28 @@ class AudiService:
 
         await self.check_bff_request_succeeded(vin, res["data"]["requestID"])
 
-    async def set_honk_and_flash(self, vin: str, mode: str):
+    async def set_honk_and_flash(self, vin: str, mode: str, lat: float = None, lon: float = None):
         """Trigger honk and flash on the vehicle.
 
         Args:
             vin: Vehicle Identification Number
             mode: 'FLASH_ONLY' for hazard lights only, 'HONK_AND_FLASH' for lights + horn
+            lat: Optional vehicle latitude
+            lon: Optional vehicle longitude
         """
         # APK analysis reveals the correct endpoint and payload:
         # POST /vehicles/{vin}/honkandflash
         # Note: APK serializer uses "duration_s" (not "durationInSeconds")
         # Body: { "duration_s": int, "mode": "FLASH_ONLY"|"HONK_AND_FLASH", "userPosition": { "latitude": double, "longitude": double } }
-        data = json.dumps({
+        payload = {
             "duration_s": 10,
             "mode": mode,
             "userPosition": {
-                "latitude": 0.0,
-                "longitude": 0.0
+                "latitude": lat if lat is not None else 0.0,
+                "longitude": lon if lon is not None else 0.0,
             }
-        })
+        }
+        data = json.dumps(payload)
 
         headers = {
             "Accept": "application/json",
