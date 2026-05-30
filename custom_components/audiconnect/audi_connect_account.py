@@ -547,6 +547,8 @@ class AudiConnectVehicle:
         self.support_charger = True
         self.support_trip_data = True
 
+        self.capabilities = {}
+
         self.charging_complete_time_frozen = None
 
     @property
@@ -572,6 +574,26 @@ class AudiConnectVehicle:
     @property
     def model_family(self):
         return self._vehicle.model_family
+
+    async def fetch_capabilities(self):
+        """Fetch vehicle capabilities from the operations list API."""
+        try:
+            operations = await self._audi_service.get_operations_list(self._vehicle.vin)
+            if operations and "serviceInfo" in operations:
+                for service in operations["serviceInfo"]:
+                    service_id = service.get("serviceId")
+                    service_status = service.get("serviceStatus", {})
+                    if service_id and service_status.get("status") == "Ready":
+                        self.capabilities[service_id] = True
+            _LOGGER.debug(
+                "Capabilities for %s: %s",
+                self._vin,
+                list(self.capabilities.keys()),
+            )
+        except Exception as e:
+            _LOGGER.debug(
+                "Unable to fetch capabilities for %s: %s", self._vin, e
+            )
 
     async def call_update(self, func, ntries: int):
         try:
@@ -601,6 +623,8 @@ class AudiConnectVehicle:
             # await self.call_update(self.update_vehicle_charger, 3)
             info = "preheater"
             await self.call_update(self.update_vehicle_preheater, 3)
+            # Fetch capabilities after initial data load
+            await self.fetch_capabilities()
             # Return True on success, False on error
             return self._no_error
         except Exception as exception:

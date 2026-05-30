@@ -284,8 +284,9 @@ class Switch(Instrument):
 
 
 class Button(Instrument):
-    def __init__(self, attr, name, icon):
+    def __init__(self, attr, name, icon, required_capability=None):
         super().__init__(component="button", attr=attr, name=name, icon=icon)
+        self._required_capability = required_capability
 
     @property
     def is_mutable(self):
@@ -293,7 +294,13 @@ class Button(Instrument):
 
     @property
     def is_supported(self):
-        return True
+        if self._required_capability is None:
+            return True
+        capabilities = getattr(self._vehicle, "capabilities", {})
+        # If capabilities haven't been fetched yet, show the button
+        if not capabilities:
+            return True
+        return self._required_capability in capabilities
 
     async def press(self):
         pass
@@ -332,6 +339,7 @@ class ClimateControlButton(Button):
             attr="climate_control_button",
             name="Start Climate Control",
             icon="mdi:air-conditioner",
+            required_capability="rclima_v1",
         )
 
     async def press(self):
@@ -355,6 +363,7 @@ class AuxiliaryHeatingButton(Button):
             attr="auxiliary_heating_button",
             name="Start Auxiliary Heating",
             icon="mdi:radiator",
+            required_capability="rheating_v1",
         )
 
     async def press(self):
@@ -369,6 +378,7 @@ class HonkAndFlashButton(Button):
             attr="honk_and_flash_button",
             name="Honk and Flash",
             icon="mdi:alarm-light",
+            required_capability="rhonk_v1",
         )
 
     async def press(self):
@@ -383,6 +393,7 @@ class HonkAndFlashWithHornButton(Button):
             attr="honk_and_flash_with_horn_button",
             name="Honk and Flash with Horn",
             icon="mdi:alarm-light-outline",
+            required_capability="rhonk_v1",
         )
 
     async def press(self):
@@ -409,6 +420,7 @@ class LockButton(Button):
             attr="lock_button",
             name="Lock Doors",
             icon="mdi:lock",
+            required_capability="rlu_v1",
         )
 
     async def press(self):
@@ -421,6 +433,7 @@ class UnlockButton(Button):
             attr="unlock_button",
             name="Unlock Doors",
             icon="mdi:lock-open",
+            required_capability="rlu_v1",
         )
 
     async def press(self):

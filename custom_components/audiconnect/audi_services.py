@@ -932,9 +932,12 @@ class AudiService:
             "Content-Type": "application/json; charset=utf-8",
             "Accept-encoding": "gzip",
         }
-        url = self.__get_cariad_url_for_vin(vin, "honkandflash")
+        # The endpoint uses the mode as a sub-path, similar to auxiliaryheating/start
+        url = self.__get_cariad_url_for_vin(
+            vin, "honkandflash/{mode}", mode=mode
+        )
         _LOGGER.debug(
-            "HONKANDFLASH: Sending request to %s with mode=%s", url, mode
+            "HONKANDFLASH: Sending request to %s with payload=%s", url, data
         )
         res = await self._api.request(
             "POST",
