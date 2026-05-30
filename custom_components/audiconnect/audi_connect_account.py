@@ -551,7 +551,7 @@ class AudiConnectVehicle:
 
     @property
     def vin(self):
-        return self._vin
+        return self._vin.upper()
 
     @property
     def csid(self):
