@@ -932,14 +932,28 @@ class AudiService:
             "Content-Type": "application/json; charset=utf-8",
             "Accept-encoding": "gzip",
         }
+        url = self.__get_cariad_url_for_vin(vin, "honkandflash")
+        _LOGGER.debug(
+            "HONKANDFLASH: Sending request to %s with mode=%s", url, mode
+        )
         res = await self._api.request(
             "POST",
-            self.__get_cariad_url_for_vin(vin, "honkandflash"),
+            url,
             headers=headers,
             data=data,
         )
+        _LOGGER.debug("HONKANDFLASH: Response: %s", res)
 
-        await self.check_bff_request_succeeded(vin, res["data"]["requestID"])
+        request_id = None
+        try:
+            request_id = res["data"]["requestID"]
+        except (KeyError, TypeError):
+            _LOGGER.debug(
+                "HONKANDFLASH: No requestID in response; skipping completion check."
+            )
+
+        if request_id:
+            await self.check_bff_request_succeeded(vin, request_id)
 
     async def check_bff_request_succeeded(self, vin: str, request_id: str):
         headers = {
