@@ -282,6 +282,16 @@ class VehicleDataResponse:
             ],
         )
 
+        # Parse userCapabilities if available
+        user_caps = self._getFromJson(data, ["userCapabilities", "capabilitiesStatus", "value"])
+        if user_caps:
+            _LOGGER.info("USER CAPABILITIES: %s", user_caps)
+
+        # Parse honkAndFlash status if available
+        honk_flash = self._getFromJson(data, ["honkAndFlash", "honkAndFlashStatus", "value"])
+        if honk_flash:
+            _LOGGER.info("HONK AND FLASH STATUS: %s", honk_flash)
+
     def _tryAppendStateWithTs(self, json, name, tsoff, loc):
         _LOGGER.debug(
             "TRY APPEND STATE: Searching for '%s' at location=%s, tsoff=%s",

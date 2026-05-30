@@ -556,6 +556,13 @@ class AudiConnectVehicle:
         return self._vin.upper()
 
     @property
+    def capabilities_list(self):
+        """Return a comma-separated list of vehicle capabilities."""
+        if self.capabilities:
+            return ", ".join(sorted(self.capabilities.keys()))
+        return None
+
+    @property
     def csid(self):
         return self._vehicle.csid
 

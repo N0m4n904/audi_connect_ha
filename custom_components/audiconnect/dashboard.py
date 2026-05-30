@@ -587,6 +587,12 @@ def create_instruments():
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
         Sensor(
+            attr="capabilities_list",
+            name="Capabilities",
+            icon="mdi:clipboard-list",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+        Sensor(
             attr="mileage",
             name="Mileage",
             icon="mdi:counter",
