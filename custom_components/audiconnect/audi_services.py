@@ -949,6 +949,7 @@ class AudiService:
         endpoints = [
             ("Cariad BFF", self.__get_cariad_url_for_vin(vin, "honkandflash"), headers),
             ("Cariad BFF mode-path", self.__get_cariad_url_for_vin(vin, "honkandflash/{mode}", mode=mode), headers),
+            ("Old setter rhonk", "{}/api/bs/rhonk/v1/vehicles/{}/{}".format(home_region_setter, vin.upper(), mode), headers_old),
             ("Old setter honkandflash", "{}/api/bs/honkandflash/v1/vehicles/{}/{}".format(home_region_setter, vin.upper(), mode), headers_old),
             ("Old setter honkAndFlash", "{}/api/bs/honkAndFlash/v1/vehicles/{}/{}".format(home_region_setter, vin.upper(), mode), headers_old),
             ("Old setter haf", "{}/api/bs/haf/v1/vehicles/{}/{}".format(home_region_setter, vin.upper(), mode), headers_old),
