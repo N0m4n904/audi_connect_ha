@@ -926,9 +926,10 @@ class AudiService:
         """
         # APK analysis reveals the correct endpoint and payload:
         # POST /vehicles/{vin}/honkandflash
-        # Body: { "durationInSeconds": int, "mode": "FLASH_ONLY"|"HONK_AND_FLASH", "userPosition": { "latitude": double, "longitude": double } }
+        # Note: APK serializer uses "duration_s" (not "durationInSeconds")
+        # Body: { "duration_s": int, "mode": "FLASH_ONLY"|"HONK_AND_FLASH", "userPosition": { "latitude": double, "longitude": double } }
         data = json.dumps({
-            "durationInSeconds": 10,
+            "duration_s": 10,
             "mode": mode,
             "userPosition": {
                 "latitude": 0.0,
