@@ -7,6 +7,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.event import async_call_later
 from homeassistant.util.dt import utcnow
 
 from .audi_connect_account import AudiConnectAccount, AudiConnectObserver
@@ -406,3 +407,6 @@ class AudiAccount(AudiConnectObserver):
             await self.update(utcnow())
         except Exception as e:
             _LOGGER.exception("Refresh cloud data failed: %s", str(e))
+
+        # Schedule a follow-up refresh to catch delayed updates from the vehicle
+        async_call_later(self.hass, 15, self.update)
