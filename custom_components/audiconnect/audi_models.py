@@ -11,6 +11,7 @@ class VehicleData:
         self.switches = set()
         self.device_trackers = set()
         self.locks = set()
+        self.buttons = set()
         self.config_entry = config_entry
         self.vehicle = None
 

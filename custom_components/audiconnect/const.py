@@ -86,6 +86,7 @@ COMPONENTS = {
     "lock": "lock",
     "device_tracker": "device_tracker",
     "switch": "switch",
+    "button": "button",
 }
 
 REGION_EUROPE: str = "DE"

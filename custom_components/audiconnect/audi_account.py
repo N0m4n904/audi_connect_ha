@@ -108,6 +108,7 @@ PLATFORMS: list[str] = [
     Platform.DEVICE_TRACKER,
     Platform.LOCK,
     Platform.SWITCH,
+    Platform.BUTTON,
 ]
 
 SERVICE_REFRESH_CLOUD_DATA = "refresh_cloud_data"
@@ -232,6 +233,8 @@ class AudiAccount(AudiConnectObserver):
                         cfg_vehicle.device_trackers.add(instrument)
                     if instrument._component == "lock":
                         cfg_vehicle.locks.add(instrument)
+                    if instrument._component == "button":
+                        cfg_vehicle.buttons.add(instrument)
 
             await self.hass.config_entries.async_forward_entry_setups(
                 self.config_entry, PLATFORMS

@@ -283,6 +283,22 @@ class Switch(Instrument):
         pass
 
 
+class Button(Instrument):
+    def __init__(self, attr, name, icon):
+        super().__init__(component="button", attr=attr, name=name, icon=icon)
+
+    @property
+    def is_mutable(self):
+        return True
+
+    @property
+    def is_supported(self):
+        return True
+
+    async def press(self):
+        pass
+
+
 class Preheater(Instrument):
     def __init__(self):
         super().__init__(
@@ -308,6 +324,83 @@ class Preheater(Instrument):
 
     async def turn_off(self):
         await self._connection.set_vehicle_pre_heater(self.vehicle_vin, False)
+
+
+class ClimateControlButton(Button):
+    def __init__(self):
+        super().__init__(
+            attr="climate_control_button",
+            name="Start Climate Control",
+            icon="mdi:air-conditioner",
+        )
+
+    async def press(self):
+        await self._connection.start_climate_control(
+            self.vehicle_vin,
+            temp_f=None,
+            temp_c=None,
+            glass_heating=False,
+            seat_fl=False,
+            seat_fr=False,
+            seat_rl=False,
+            seat_rr=False,
+            climatisation_at_unlock=False,
+            climatisation_mode="comfort",
+        )
+
+
+class AuxiliaryHeatingButton(Button):
+    def __init__(self):
+        super().__init__(
+            attr="auxiliary_heating_button",
+            name="Start Auxiliary Heating",
+            icon="mdi:radiator",
+        )
+
+    async def press(self):
+        await self._connection.set_vehicle_pre_heater(
+            self.vehicle_vin, activate=True
+        )
+
+
+class HonkAndFlashButton(Button):
+    def __init__(self):
+        super().__init__(
+            attr="honk_and_flash_button",
+            name="Honk and Flash",
+            icon="mdi:alarm-light",
+        )
+
+    async def press(self):
+        await self._connection.set_vehicle_honk_and_flash(
+            self.vehicle_vin, "flash"
+        )
+
+
+class HonkAndFlashWithHornButton(Button):
+    def __init__(self):
+        super().__init__(
+            attr="honk_and_flash_with_horn_button",
+            name="Honk and Flash with Horn",
+            icon="mdi:alarm-light-outline",
+        )
+
+    async def press(self):
+        await self._connection.set_vehicle_honk_and_flash(
+            self.vehicle_vin, "honkAndFlash"
+        )
+
+
+class RefreshVehicleDataButton(Button):
+    def __init__(self):
+        super().__init__(
+            attr="refresh_vehicle_data_button",
+            name="Refresh Vehicle Data",
+            icon="mdi:refresh",
+        )
+
+    async def press(self):
+        await self._connection.refresh_vehicle_data(self.vehicle_vin)
 
 
 class Position(Instrument):
@@ -437,6 +530,11 @@ def create_instruments():
         TripData(attr="longterm_reset", name="LongTerm Trip User Reset"),
         Lock(),
         Preheater(),
+        ClimateControlButton(),
+        AuxiliaryHeatingButton(),
+        HonkAndFlashButton(),
+        HonkAndFlashWithHornButton(),
+        RefreshVehicleDataButton(),
         Sensor(
             attr="model",
             name="Model",
