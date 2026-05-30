@@ -947,6 +947,8 @@ class AudiService:
             "User-Agent": AudiAPI.HDR_USER_AGENT,
             "Content-Type": "application/json; charset=utf-8",
             "Accept-encoding": "gzip",
+            "X-App-Version": AudiAPI.HDR_XAPP_VERSION,
+            "X-App-Name": "myAudi",
         }
 
         url = self.__get_cariad_url_for_vin(vin, "honkandflash")
