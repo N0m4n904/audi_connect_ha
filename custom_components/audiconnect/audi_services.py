@@ -934,48 +934,22 @@ class AudiService:
             "Content-Type": "application/json; charset=utf-8",
             "Accept-encoding": "gzip",
         }
-        headers_old = {
-            "Accept": "application/json",
-            "Accept-charset": "utf-8",
-            "Authorization": "Bearer " + self.vwToken.get("access_token"),
-            "User-Agent": AudiAPI.HDR_USER_AGENT,
-            "Content-Type": "application/json; charset=utf-8",
-        }
 
-        home_region_setter = await self._get_home_region_setter(vin.upper())
-        home_region = await self._get_home_region(vin.upper())
+        # The APK reveals the service key is "rhonk_v1".
+        # Try the Cariad BFF endpoint using "rhonk" as the path.
+        url = self.__get_cariad_url_for_vin(vin, "rhonk/{mode}", mode=mode)
+        _LOGGER.debug("HONKANDFLASH: Sending POST to %s with body: %s", url, data)
+        res = await self._api.request("POST", url, headers=headers, data=data)
+        _LOGGER.debug("HONKANDFLASH: Response: %s", res)
 
-        # Try multiple endpoint variations
-        endpoints = [
-            ("Cariad BFF", self.__get_cariad_url_for_vin(vin, "honkandflash"), headers),
-            ("Cariad BFF mode-path", self.__get_cariad_url_for_vin(vin, "honkandflash/{mode}", mode=mode), headers),
-            ("Old setter rhonk", "{}/api/bs/rhonk/v1/vehicles/{}/{}".format(home_region_setter, vin.upper(), mode), headers_old),
-            ("Old setter honkandflash", "{}/api/bs/honkandflash/v1/vehicles/{}/{}".format(home_region_setter, vin.upper(), mode), headers_old),
-            ("Old setter honkAndFlash", "{}/api/bs/honkAndFlash/v1/vehicles/{}/{}".format(home_region_setter, vin.upper(), mode), headers_old),
-            ("Old setter haf", "{}/api/bs/haf/v1/vehicles/{}/{}".format(home_region_setter, vin.upper(), mode), headers_old),
-            ("fs-car honkAndFlash", "{}/fs-car/bs/honkAndFlash/v1/{}/{}/vehicles/{}/honkAndFlash".format(home_region, self._type, self._country, vin.upper()), headers_old),
-            ("fs-car honkandflash", "{}/fs-car/bs/honkandflash/v1/{}/{}/vehicles/{}/honkandflash".format(home_region, self._type, self._country, vin.upper()), headers_old),
-        ]
+        request_id = None
+        try:
+            request_id = res["data"]["requestID"]
+        except (KeyError, TypeError):
+            _LOGGER.debug("HONKANDFLASH: No requestID in response")
 
-        last_error = None
-        for name, url, req_headers in endpoints:
-            _LOGGER.debug("HONKANDFLASH: Trying %s endpoint: %s", name, url)
-            try:
-                res = await self._api.request("POST", url, headers=req_headers, data=data)
-                _LOGGER.info("HONKANDFLASH: Success with %s endpoint! Response: %s", name, res)
-                request_id = None
-                try:
-                    request_id = res["data"]["requestID"]
-                except (KeyError, TypeError):
-                    pass
-                if request_id:
-                    await self.check_bff_request_succeeded(vin, request_id)
-                return
-            except Exception as e:
-                _LOGGER.debug("HONKANDFLASH: %s endpoint failed: %s", name, e)
-                last_error = e
-
-        raise Exception("All honk and flash endpoints failed. Last error: {}".format(last_error))
+        if request_id:
+            await self.check_bff_request_succeeded(vin, request_id)
 
     async def check_bff_request_succeeded(self, vin: str, request_id: str):
         headers = {
