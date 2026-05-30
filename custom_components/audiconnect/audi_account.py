@@ -361,7 +361,7 @@ class AudiAccount(AudiConnectObserver):
             f"Initiating 'Honk and Flash' (flash only) action for VIN {vin}..."
         )
 
-        await self.connection.set_vehicle_honk_and_flash(vin, "flash")
+        await self.connection.set_vehicle_honk_and_flash(vin, "FLASH_ONLY")
 
     async def honk_and_flash_with_horn(self, service):
         """Trigger hazard lights and horn on the vehicle."""
@@ -371,7 +371,7 @@ class AudiAccount(AudiConnectObserver):
             f"Initiating 'Honk and Flash' (horn + flash) action for VIN {vin}..."
         )
 
-        await self.connection.set_vehicle_honk_and_flash(vin, "honkAndFlash")
+        await self.connection.set_vehicle_honk_and_flash(vin, "HONK_AND_FLASH")
 
     async def handle_notification(self, vin: str, action: str) -> None:
         await self._refresh_vehicle_data(vin)

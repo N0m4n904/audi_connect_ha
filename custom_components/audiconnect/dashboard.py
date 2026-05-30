@@ -383,7 +383,7 @@ class HonkAndFlashButton(Button):
 
     async def press(self):
         await self._connection.set_vehicle_honk_and_flash(
-            self.vehicle_vin, "flash"
+            self.vehicle_vin, "FLASH_ONLY"
         )
 
 
@@ -398,7 +398,7 @@ class HonkAndFlashWithHornButton(Button):
 
     async def press(self):
         await self._connection.set_vehicle_honk_and_flash(
-            self.vehicle_vin, "honkAndFlash"
+            self.vehicle_vin, "HONK_AND_FLASH"
         )
 
 

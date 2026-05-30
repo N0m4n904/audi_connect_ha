@@ -922,9 +922,19 @@ class AudiService:
 
         Args:
             vin: Vehicle Identification Number
-            mode: 'flash' for hazard lights only, 'honkAndFlash' for lights + horn
+            mode: 'FLASH_ONLY' for hazard lights only, 'HONK_AND_FLASH' for lights + horn
         """
-        data = json.dumps({"mode": mode})
+        # APK analysis reveals the correct endpoint and payload:
+        # POST /vehicles/{vin}/honkandflash
+        # Body: { "durationInSeconds": int, "mode": "FLASH_ONLY"|"HONK_AND_FLASH", "userPosition": { "latitude": double, "longitude": double } }
+        data = json.dumps({
+            "durationInSeconds": 10,
+            "mode": mode,
+            "userPosition": {
+                "latitude": 0.0,
+                "longitude": 0.0
+            }
+        })
 
         headers = {
             "Accept": "application/json",
@@ -935,9 +945,7 @@ class AudiService:
             "Accept-encoding": "gzip",
         }
 
-        # The APK reveals the service key is "rhonk_v1".
-        # Try the Cariad BFF endpoint using "rhonk" as the path.
-        url = self.__get_cariad_url_for_vin(vin, "rhonk/{mode}", mode=mode)
+        url = self.__get_cariad_url_for_vin(vin, "honkandflash")
         _LOGGER.debug("HONKANDFLASH: Sending POST to %s with body: %s", url, data)
         res = await self._api.request("POST", url, headers=headers, data=data)
         _LOGGER.debug("HONKANDFLASH: Response: %s", res)
