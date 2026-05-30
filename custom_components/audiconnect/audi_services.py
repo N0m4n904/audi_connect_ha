@@ -926,8 +926,10 @@ class AudiService:
             lat: Optional vehicle latitude
             lon: Optional vehicle longitude
         """
-        # 5.4.0 APK uses the OLD MBB API (not Cariad BFF):
-        # POST {homeRegion}/fs-car/bs/rhf/v1/{type}/{country}/vehicles/{vin}/honkAndFlash
+        # 5.4.0 APK uses the OLD MBB API (not Cariad BFF).
+        # Like lock/unlock, this requires a security token (PIN challenge).
+        # The endpoint pattern follows other action endpoints:
+        # POST {homeRegionSetter}/api/bs/rhf/v1/vehicles/{vin}/honkAndFlash
         # Body wrapped in "honkAndFlashRequest":
         # {
         #   "honkAndFlashRequest": {
@@ -939,6 +941,11 @@ class AudiService:
         #     "serviceOperationCode": "FLASH_ONLY"|"HONK_AND_FLASH"
         #   }
         # }
+        
+        # Get security token (PIN challenge) - same flow as lock/unlock
+        security_token = await self._get_security_token(
+            vin, "rhf_v1/operations/" + mode
+        )
         
         # Convert lat/lon to microdegrees (int)
         lat_micro = int((lat if lat is not None else 0.0) * 1000000)
@@ -956,18 +963,12 @@ class AudiService:
         }
         data = json.dumps(payload)
 
-        # Use old API token (vwToken) for MBB API
-        self._api.use_token(self.vwToken)
-        
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
+        headers = self._get_vehicle_action_header(
+            "application/json", security_token
+        )
 
-        url = "{homeRegion}/fs-car/bs/rhf/v1/{type}/{country}/vehicles/{vin}/honkAndFlash".format(
-            homeRegion=await self._get_home_region(vin.upper()),
-            type=self._type,
-            country=self._country,
+        url = "{homeRegionSetter}/api/bs/rhf/v1/vehicles/{vin}/honkAndFlash".format(
+            homeRegionSetter=await self._get_home_region_setter(vin.upper()),
             vin=vin.upper(),
         )
         
@@ -975,33 +976,29 @@ class AudiService:
         res = await self._api.request("POST", url, headers=headers, data=data)
         _LOGGER.debug("HONKANDFLASH: Response: %s", res)
 
-        # Check if the request succeeded using the old API pattern
-        # The response should contain a requestId or similar
+        # Poll for request completion using old API pattern
         request_id = None
         try:
-            # Try to extract request ID from response - format may vary
             if isinstance(res, dict):
                 if "requestId" in res:
                     request_id = res["requestId"]
-                elif "data" in res and isinstance(res["data"], dict) and "requestId" in res["data"]:
-                    request_id = res["data"]["requestId"]
+                elif "rluActionResponse" in res and "requestId" in res["rluActionResponse"]:
+                    # Some endpoints reuse rluActionResponse structure
+                    request_id = res["rluActionResponse"]["requestId"]
         except (KeyError, TypeError):
             _LOGGER.debug("HONKANDFLASH: No requestId in response")
 
         if request_id:
-            # Poll for request completion using old API pattern
-            check_url = "{homeRegion}/fs-car/bs/rhf/v1/{type}/{country}/vehicles/{vin}/requests/{requestId}/status".format(
-                homeRegion=await self._get_home_region(vin.upper()),
-                type=self._type,
-                country=self._country,
+            check_url = "{homeRegionSetter}/api/bs/rhf/v1/vehicles/{vin}/requests/{requestId}/status".format(
+                homeRegionSetter=await self._get_home_region_setter(vin.upper()),
                 vin=vin.upper(),
                 requestId=request_id,
             )
             await self.check_request_succeeded(
                 check_url,
                 "rhfRequestStatus",
-                "request_successful",
-                "request_failed",
+                REQUEST_SUCCESSFUL,
+                REQUEST_FAILED,
                 "requestStatusResponse.status",
             )
 
