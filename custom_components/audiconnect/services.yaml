@@ -109,3 +109,19 @@ set_target_soc:
           max: 100
           step: 5
           unit_of_measurement: "%"
+
+honk_and_flash:
+  fields:
+    vin:
+      required: true
+      example: WBANXXXXXX1234567
+      selector:
+        text:
+
+honk_and_flash_with_horn:
+  fields:
+    vin:
+      required: true
+      example: WBANXXXXXX1234567
+      selector:
+        text:

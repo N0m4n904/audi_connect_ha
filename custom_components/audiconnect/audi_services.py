@@ -915,6 +915,32 @@ class AudiService:
 
         await self.check_bff_request_succeeded(vin, res["data"]["requestID"])
 
+    async def set_honk_and_flash(self, vin: str, mode: str):
+        """Trigger honk and flash on the vehicle.
+
+        Args:
+            vin: Vehicle Identification Number
+            mode: 'flash' for hazard lights only, 'honkAndFlash' for lights + horn
+        """
+        data = json.dumps({"mode": mode})
+
+        headers = {
+            "Accept": "application/json",
+            "Accept-charset": "utf-8",
+            "Authorization": "Bearer " + self._bearer_token_json["access_token"],
+            "User-Agent": AudiAPI.HDR_USER_AGENT,
+            "Content-Type": "application/json; charset=utf-8",
+            "Accept-encoding": "gzip",
+        }
+        res = await self._api.request(
+            "POST",
+            self.__get_cariad_url_for_vin(vin, "honkandflash"),
+            headers=headers,
+            data=data,
+        )
+
+        await self.check_bff_request_succeeded(vin, res["data"]["requestID"])
+
     async def check_bff_request_succeeded(self, vin: str, request_id: str):
         headers = {
             "Accept": "application/json",

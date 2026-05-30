@@ -88,6 +88,20 @@ SERVICE_SET_TARGET_SOC_SCHEMA = vol.Schema(
     }
 )
 
+SERVICE_HONK_AND_FLASH = "honk_and_flash"
+SERVICE_HONK_AND_FLASH_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_VIN): cv.string,
+    }
+)
+
+SERVICE_HONK_AND_FLASH_WITH_HORN = "honk_and_flash_with_horn"
+SERVICE_HONK_AND_FLASH_WITH_HORN_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_VIN): cv.string,
+    }
+)
+
 PLATFORMS: list[str] = [
     Platform.BINARY_SENSOR,
     Platform.SENSOR,
@@ -168,6 +182,18 @@ class AudiAccount(AudiConnectObserver):
             SERVICE_SET_TARGET_SOC,
             self.set_target_soc,
             schema=SERVICE_SET_TARGET_SOC_SCHEMA,
+        )
+        self.hass.services.async_register(
+            DOMAIN,
+            SERVICE_HONK_AND_FLASH,
+            self.honk_and_flash,
+            schema=SERVICE_HONK_AND_FLASH_SCHEMA,
+        )
+        self.hass.services.async_register(
+            DOMAIN,
+            SERVICE_HONK_AND_FLASH_WITH_HORN,
+            self.honk_and_flash_with_horn,
+            schema=SERVICE_HONK_AND_FLASH_WITH_HORN_SCHEMA,
         )
 
         self.connection.add_observer(self)
@@ -322,6 +348,26 @@ class AudiAccount(AudiConnectObserver):
         )
 
         await self.connection.set_target_state_of_charge(vin, target_soc)
+
+    async def honk_and_flash(self, service):
+        """Trigger hazard lights flash on the vehicle."""
+        vin = service.data.get(CONF_VIN).lower()
+
+        _LOGGER.debug(
+            f"Initiating 'Honk and Flash' (flash only) action for VIN {vin}..."
+        )
+
+        await self.connection.set_vehicle_honk_and_flash(vin, "flash")
+
+    async def honk_and_flash_with_horn(self, service):
+        """Trigger hazard lights and horn on the vehicle."""
+        vin = service.data.get(CONF_VIN).lower()
+
+        _LOGGER.debug(
+            f"Initiating 'Honk and Flash' (horn + flash) action for VIN {vin}..."
+        )
+
+        await self.connection.set_vehicle_honk_and_flash(vin, "honkAndFlash")
 
     async def handle_notification(self, vin: str, action: str) -> None:
         await self._refresh_vehicle_data(vin)

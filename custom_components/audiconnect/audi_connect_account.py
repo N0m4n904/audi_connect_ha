@@ -24,6 +24,7 @@ ACTION_CLIMATISATION = "climatisation"
 ACTION_CHARGER = "charger"
 ACTION_WINDOW_HEATING = "window_heating"
 ACTION_PRE_HEATER = "pre_heater"
+ACTION_HONK_AND_FLASH = "honk_and_flash"
 
 
 class AudiConnectObserver(ABC):
@@ -491,6 +492,40 @@ class AudiConnectAccount:
                 exception,
                 "Unable to {action} pre-heater of vehicle {vin}".format(
                     action="start" if activate else "stop", vin=vin
+                ),
+            )
+
+    async def set_vehicle_honk_and_flash(self, vin: str, mode: str):
+        if not self._loggedin:
+            await self.login()
+
+        if not self._loggedin:
+            return False
+
+        try:
+            _LOGGER.debug(
+                "Sending command to trigger honk and flash ({mode}) on vehicle {vin}".format(
+                    mode=mode, vin=vin
+                ),
+            )
+
+            await self._audi_service.set_honk_and_flash(vin, mode)
+
+            _LOGGER.debug(
+                "Successfully triggered honk and flash ({mode}) on vehicle {vin}".format(
+                    mode=mode, vin=vin
+                ),
+            )
+
+            await self.notify(vin, ACTION_HONK_AND_FLASH)
+
+            return True
+
+        except Exception as exception:
+            log_exception(
+                exception,
+                "Unable to trigger honk and flash ({mode}) on vehicle {vin}".format(
+                    mode=mode, vin=vin
                 ),
             )
 

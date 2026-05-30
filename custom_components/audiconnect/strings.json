@@ -167,6 +167,26 @@
           "description": "Target state of charge percentage (20-100%)."
         }
       }
+    },
+    "honk_and_flash": {
+      "name": "Honk and Flash",
+      "description": "Trigger the vehicle's hazard lights to locate the vehicle.",
+      "fields": {
+        "vin": {
+          "name": "VIN",
+          "description": "The Vehicle Identification Number (VIN) of the Audi vehicle. This should be a 17-character identifier unique to each vehicle."
+        }
+      }
+    },
+    "honk_and_flash_with_horn": {
+      "name": "Honk and Flash with Horn",
+      "description": "Trigger the vehicle's hazard lights and horn to locate the vehicle.",
+      "fields": {
+        "vin": {
+          "name": "VIN",
+          "description": "The Vehicle Identification Number (VIN) of the Audi vehicle. This should be a 17-character identifier unique to each vehicle."
+        }
+      }
     }
   }
 }
