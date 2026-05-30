@@ -18,7 +18,7 @@ Due to API changes, **currently not all functionality is available**. Please ope
 
 ## Description
 
-The `audiconnect` component provides an integration with the Audi Connect cloud service. It adds presence detection, sensors such as range, mileage, and fuel level, and provides car actions such as locking/unlocking and setting the pre-heater.
+The `audiconnect` component provides an integration with the Audi Connect cloud service. It adds presence detection, sensors such as range, mileage, fuel level, and VIN, and provides car actions such as locking/unlocking, setting the pre-heater, climate control, and locating the vehicle via buttons or service calls.
 
 **Note:** Certain functions require special permissions from Audi, such as position update via GPS.
 
@@ -70,6 +70,68 @@ Find configuration options under **Settings ➤ Devices & Services ➤ Integrati
 | `API Level`                       | `int`  | Determines the API structure used for service action calls:<br>• `0` – _Typically_ Gas vehicles (legacy format)<br>• `1` – _Typically_ e-tron (electric vehicles, newer format) |
 
 _Note: The integration will reload automatically upon clicking `Submit`, but a Home Assistant restart is suggested._
+
+## Entities
+
+The integration creates the following entities for each vehicle:
+
+### Sensors
+
+| Entity | Description |
+| ------ | ----------- |
+| `position` | GPS location of the vehicle |
+| `vin` | Vehicle Identification Number |
+| `last_update_time` | Timestamp of the last data update |
+| `mileage` | Total vehicle mileage |
+| `range` | Estimated remaining range |
+| `service_inspection_time` | Days until next service inspection |
+| `service_inspection_distance` | Distance until next service inspection |
+| `oil_level` | Engine oil level percentage |
+| `tank_level` | Fuel tank level percentage |
+| `state_of_charge` | Battery state of charge (EV) |
+| `charging_state` | Current charging status (EV) |
+| `outdoor_temperature` | Outside temperature |
+| ...and more | See the integration device page for the full list |
+
+### Binary Sensors
+
+| Entity | Description |
+| ------ | ----------- |
+| `parking_light` | Whether parking lights are on |
+| `any_window_open` | Whether any window is open |
+| `any_door_unlocked` | Whether any door is unlocked |
+| `any_door_open` | Whether any door is open |
+| `trunk_open` | Whether the trunk is open |
+| `hood_open` | Whether the hood is open |
+| `plug_state` | Whether the vehicle is plugged in (EV) |
+| `is_moving` | Whether the vehicle is currently moving |
+| ...and more | See the integration device page for the full list |
+
+### Switches
+
+| Entity | Description |
+| ------ | ----------- |
+| `preheater` | Toggle the auxiliary heater on/off |
+
+### Locks
+
+| Entity | Description |
+| ------ | ----------- |
+| `door_lock` | Lock or unlock the vehicle doors |
+
+### Buttons
+
+The following buttons are available for easy one-tap actions directly from the Home Assistant UI or automations:
+
+| Entity | Description |
+| ------ | ----------- |
+| `start_climate_control` | Start climate control with default settings |
+| `start_auxiliary_heating` | Start the auxiliary heater |
+| `honk_and_flash` | Flash the hazard lights to locate the vehicle |
+| `honk_and_flash_with_horn` | Flash hazard lights and sound the horn |
+| `lock_doors` | Lock the vehicle doors |
+| `unlock_doors` | Unlock the vehicle doors |
+| `refresh_vehicle_data` | Force a fresh data update from the vehicle |
 
 ## Service Actions
 
@@ -199,6 +261,42 @@ data:
 
 - Requires the S-PIN to be set in the configuration.
 - When the service action is successfully performed, an update request is automatically triggered.
+
+### Audi Connect: Honk and Flash
+
+`audiconnect.honk_and_flash`
+
+This service action flashes the vehicle's hazard lights to help locate the vehicle in a parking lot.
+
+#### Parameters
+
+- **`vin`**: The Vehicle Identification Number (VIN) of the Audi you want to locate.
+
+#### Usage Example
+
+```yaml
+service: audiconnect.honk_and_flash
+data:
+  vin: "WAUZZZ4G7EN123456"
+```
+
+### Audi Connect: Honk and Flash with Horn
+
+`audiconnect.honk_and_flash_with_horn`
+
+This service action flashes the vehicle's hazard lights and sounds the horn to help locate the vehicle.
+
+#### Parameters
+
+- **`vin`**: The Vehicle Identification Number (VIN) of the Audi you want to locate.
+
+#### Usage Example
+
+```yaml
+service: audiconnect.honk_and_flash_with_horn
+data:
+  vin: "WAUZZZ4G7EN123456"
+```
 
 ## Example Dashboard Card
 
