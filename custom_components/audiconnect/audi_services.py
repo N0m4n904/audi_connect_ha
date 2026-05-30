@@ -918,7 +918,7 @@ class AudiService:
         await self.check_bff_request_succeeded(vin, res["data"]["requestID"])
 
     async def set_honk_and_flash(self, vin: str, mode: str, lat: float = None, lon: float = None):
-        """Trigger honk and flash on the vehicle.
+        """Trigger honk and flash on the vehicle using the 5.4.0 MBB API.
 
         Args:
             vin: Vehicle Identification Number
@@ -926,44 +926,84 @@ class AudiService:
             lat: Optional vehicle latitude
             lon: Optional vehicle longitude
         """
-        # APK analysis reveals the correct endpoint and payload:
-        # POST /vehicles/{vin}/honkandflash
-        # Note: APK serializer uses "duration_s" (not "durationInSeconds")
-        # Body: { "duration_s": int, "mode": "FLASH_ONLY"|"HONK_AND_FLASH", "userPosition": { "latitude": double, "longitude": double } }
+        # 5.4.0 APK uses the OLD MBB API (not Cariad BFF):
+        # POST {homeRegion}/fs-car/bs/rhf/v1/{type}/{country}/vehicles/{vin}/honkAndFlash
+        # Body wrapped in "honkAndFlashRequest":
+        # {
+        #   "honkAndFlashRequest": {
+        #     "userPosition": {
+        #       "latitude": <microdegrees (int)>,
+        #       "longitude": <microdegrees (int)>
+        #     },
+        #     "serviceDuration": <seconds (int)>,
+        #     "serviceOperationCode": "FLASH_ONLY"|"HONK_AND_FLASH"
+        #   }
+        # }
+        
+        # Convert lat/lon to microdegrees (int)
+        lat_micro = int((lat if lat is not None else 0.0) * 1000000)
+        lon_micro = int((lon if lon is not None else 0.0) * 1000000)
+        
         payload = {
-            "duration_s": 10,
-            "mode": mode,
-            "userPosition": {
-                "latitude": lat if lat is not None else 0.0,
-                "longitude": lon if lon is not None else 0.0,
+            "honkAndFlashRequest": {
+                "userPosition": {
+                    "latitude": lat_micro,
+                    "longitude": lon_micro,
+                },
+                "serviceDuration": 10,
+                "serviceOperationCode": mode,
             }
         }
         data = json.dumps(payload)
 
+        # Use old API token (vwToken) for MBB API
+        self._api.use_token(self.vwToken)
+        
         headers = {
             "Accept": "application/json",
-            "Accept-charset": "utf-8",
-            "Authorization": "Bearer " + self._bearer_token_json["access_token"],
-            "User-Agent": AudiAPI.HDR_USER_AGENT,
-            "Content-Type": "application/json; charset=utf-8",
-            "Accept-encoding": "gzip",
-            "X-App-Version": AudiAPI.HDR_XAPP_VERSION,
-            "X-App-Name": "myAudi",
+            "Content-Type": "application/json",
         }
 
-        url = self.__get_cariad_url_for_vin(vin, "honkandflash")
+        url = "{homeRegion}/fs-car/bs/rhf/v1/{type}/{country}/vehicles/{vin}/honkAndFlash".format(
+            homeRegion=await self._get_home_region(vin.upper()),
+            type=self._type,
+            country=self._country,
+            vin=vin.upper(),
+        )
+        
         _LOGGER.debug("HONKANDFLASH: Sending POST to %s with body: %s", url, data)
         res = await self._api.request("POST", url, headers=headers, data=data)
         _LOGGER.debug("HONKANDFLASH: Response: %s", res)
 
+        # Check if the request succeeded using the old API pattern
+        # The response should contain a requestId or similar
         request_id = None
         try:
-            request_id = res["data"]["requestID"]
+            # Try to extract request ID from response - format may vary
+            if isinstance(res, dict):
+                if "requestId" in res:
+                    request_id = res["requestId"]
+                elif "data" in res and isinstance(res["data"], dict) and "requestId" in res["data"]:
+                    request_id = res["data"]["requestId"]
         except (KeyError, TypeError):
-            _LOGGER.debug("HONKANDFLASH: No requestID in response")
+            _LOGGER.debug("HONKANDFLASH: No requestId in response")
 
         if request_id:
-            await self.check_bff_request_succeeded(vin, request_id)
+            # Poll for request completion using old API pattern
+            check_url = "{homeRegion}/fs-car/bs/rhf/v1/{type}/{country}/vehicles/{vin}/requests/{requestId}/status".format(
+                homeRegion=await self._get_home_region(vin.upper()),
+                type=self._type,
+                country=self._country,
+                vin=vin.upper(),
+                requestId=request_id,
+            )
+            await self.check_request_succeeded(
+                check_url,
+                "rhfRequestStatus",
+                "request_successful",
+                "request_failed",
+                "requestStatusResponse.status",
+            )
 
     async def check_bff_request_succeeded(self, vin: str, request_id: str):
         headers = {
