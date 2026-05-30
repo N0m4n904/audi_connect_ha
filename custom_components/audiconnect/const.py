@@ -34,6 +34,7 @@ TRACKER_UPDATE = f"{DOMAIN}_tracker_update"
 
 RESOURCES = [
     "position",
+    "vin",
     "last_update_time",
     "shortterm_current",
     "shortterm_reset",

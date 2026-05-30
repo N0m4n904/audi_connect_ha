@@ -444,6 +444,12 @@ def create_instruments():
             entity_category=EntityCategory.DIAGNOSTIC,
         ),
         Sensor(
+            attr="vin",
+            name="VIN",
+            icon="mdi:car-info",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+        Sensor(
             attr="mileage",
             name="Mileage",
             icon="mdi:counter",
