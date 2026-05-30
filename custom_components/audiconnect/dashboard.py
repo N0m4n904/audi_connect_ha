@@ -403,6 +403,30 @@ class RefreshVehicleDataButton(Button):
         await self._connection.refresh_vehicle_data(self.vehicle_vin)
 
 
+class LockButton(Button):
+    def __init__(self):
+        super().__init__(
+            attr="lock_button",
+            name="Lock Doors",
+            icon="mdi:lock",
+        )
+
+    async def press(self):
+        await self._connection.set_vehicle_lock(self.vehicle_vin, True)
+
+
+class UnlockButton(Button):
+    def __init__(self):
+        super().__init__(
+            attr="unlock_button",
+            name="Unlock Doors",
+            icon="mdi:lock-open",
+        )
+
+    async def press(self):
+        await self._connection.set_vehicle_lock(self.vehicle_vin, False)
+
+
 class Position(Instrument):
     def __init__(self):
         super().__init__(component="device_tracker", attr="position", name="Position")
@@ -534,6 +558,8 @@ def create_instruments():
         AuxiliaryHeatingButton(),
         HonkAndFlashButton(),
         HonkAndFlashWithHornButton(),
+        LockButton(),
+        UnlockButton(),
         RefreshVehicleDataButton(),
         Sensor(
             attr="model",
